@@ -1,0 +1,45 @@
+# 工作流名称
+name: 部署 Vue3 项目到 GitHub Pages
+
+# 触发条件：推送到 main 分支时触发
+on:
+  push:
+    branches: [ main ]
+  # 支持手动触发部署
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    # 运行环境：最新版 Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 拉取仓库最新代码
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # 2. 安装 Node.js 环境
+      - name: 配置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # 和你项目的 Node 版本保持一致
+          cache: 'npm' # 开启 npm 缓存，加速后续构建
+
+      # 3. 安装项目依赖
+      - name: 安装依赖
+        run: npm install
+
+      # 4. 构建项目，生成 dist 目录
+      - name: 构建静态产物
+        run: npm run build
+
+      # 5. 适配 SPA history 路由：复制 index.html 为 404.html，解决刷新 404
+      - name: 处理路由兼容
+        run: cp dist/index.html dist/404.html
+
+      # 6. 部署到 GitHub Pages
+      - name: 执行部署
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }} # GitHub 自动生成的令牌，无需手动配置
+          publish_dir: ./dist # 部署的产物目录，Vue3 默认是 dist
