@@ -1,12 +1,12 @@
 // src/router/index.ts — 路由入口
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory,createWebHashHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { buildMenuRoutes } from './menu'
 import { fixedRoutes } from './routes'
 import type { UserInfo } from '@/type'
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes: fixedRoutes,
 })
 
