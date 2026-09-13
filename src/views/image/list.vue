@@ -94,7 +94,7 @@ const isEditMode = ref(false)
 const editingId = ref<number | null>(null)
 const submitting = ref(false)
 const deleteLoadingId = ref<number | null>(null)
-const form = reactive({ name: '', order: 0 })
+const form = reactive({ name: '', order: 100 })
 
 const drawerTitle = computed(() => (isEditMode.value ? '修改图库分类' : '新增图库分类'))
 const submitButtonText = computed(() => (isEditMode.value ? '确认修改' : '确认新增'))
@@ -148,7 +148,7 @@ function handleCurrentChange(page: number) {
 function handleAddClass() {
   isEditMode.value = false
   form.name = ''
-  form.order = 0
+  form.order = 100
   open.value = true
 }
 
@@ -203,7 +203,7 @@ async function onSubmit() {
     open.value = false
     await loadList()
   } catch (err) {
-    console.error(err);
+    console.log(err);
   } finally {
     submitting.value = false
   }

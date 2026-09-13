@@ -34,16 +34,6 @@ export type ImageClassListResponse = ApiResponse<PaginationList<ImageClassItem>>
 export type ImageAssetListResponse = ApiResponse<PaginationList<ImageAssetItem>>
 export type ImageClassActionResponse<T = unknown> = ApiResponse<T>
 
-function buildImageClassPayload(name: string, order: number): ImageClassSubmitPayload {
-  // 当前后端要求提交体结构为 { data: { name, order } }
-  return {
-    data: {
-      name,
-      order,
-    },
-  }
-}
-
 export function getImageList(limit: number, page: number) {
   return axios.get(`/image_class/${page}`, { params: { limit } }) as Promise<ImageClassListResponse>
 }
@@ -59,9 +49,9 @@ export function deleteImageClass(id: number) {
 }
 
 export function addImageClass(name: string,order: number) {
-  return axios.post(`/image_class`, {data:{name,order}}) as Promise<ImageClassActionResponse>
+  return axios.post(`/image_class`, {name,order}) as Promise<ImageClassActionResponse>
 }
 
 export function setImageClass(name: string, order: number, id: number) {
-  return axios.post(`/image_class/${id}`, buildImageClassPayload(name, order)) as Promise<ImageClassActionResponse>
+  return axios.post(`/image_class/${id}`, {name,order}) as Promise<ImageClassActionResponse>
 }

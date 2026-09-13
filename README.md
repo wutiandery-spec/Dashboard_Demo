@@ -1,5 +1,3 @@
-# hello_vue_3
-
 基于 Vue 3 + TypeScript + Vite + Element Plus + Tailwind CSS v4 的中后台管理项目。
 
 ## 技术栈
@@ -14,19 +12,6 @@
 | 构建 | Vite（rolldown-vite） | ^8.1.5 |
 | 语言 | TypeScript + vue-tsc | ~6.0.0 |
 | 代码规范 | ESLint 9（flat config）+ Prettier | ^10.x / ^3.x |
-
-## 常用命令
-
-```bash
-npm run dev         # 启动开发服务
-npm run build       # 类型检查 + 生产构建（run-p type-check "build-only {@}"）
-npm run build-only  # 仅构建
-npm run type-check  # 仅类型检查（vue-tsc --build）
-npm run lint        # 运行 ESLint 检查（vue + ts 文件）
-npm run lint:fix    # 自动修复可修复的 ESLint 问题
-npm run format      # Prettier 格式化 src/ 下全部源码
-npm run preview     # 预览生产构建
-```
 
 ## 项目结构
 
