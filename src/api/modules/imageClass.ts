@@ -2,10 +2,15 @@ import axios from '@/api/request'
 import type { ApiResponse } from '@/type'
 
 export interface ImageClassItem {
-  id: number
+  id: number 
   name: string
-  order: number
-  image_count: number
+  order?: number
+  image_count?: number
+  url?: string;
+  path?: string;
+  create_time?: string;
+  update_time?: string;
+  image_class_id?: number;
 }
 
 export interface ImageAssetItem {
@@ -48,10 +53,19 @@ export function deleteImageClass(id: number) {
   return axios.post(`/image_class/${id}/delete`) as Promise<ImageClassActionResponse>
 }
 
-export function addImageClass(name: string,order: number) {
-  return axios.post(`/image_class`, {name,order}) as Promise<ImageClassActionResponse>
+export function addImageClass(name: string, order: number) {
+  return axios.post(`/image_class`, { name, order }) as Promise<ImageClassActionResponse>
 }
 
 export function setImageClass(name: string, order: number, id: number) {
-  return axios.post(`/image_class/${id}`, {name,order}) as Promise<ImageClassActionResponse>
+  return axios.post(`/image_class/${id}`, { name, order }) as Promise<ImageClassActionResponse>
+}
+export function uploadImage(image_class_id: number, img: [] | string[]) {
+  return axios.post('/image/upload', { image_class_id, img })
+}
+export function deleteImage(ids: number[]) {
+  return axios.post('/image/delete_all', { ids })
+}
+export function setImageName(id: number, name: string) {
+  return axios.post(`/image/${id}`, { name })
 }

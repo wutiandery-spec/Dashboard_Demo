@@ -27,7 +27,7 @@ service.interceptors.response.use(
   },
   (error) => {
     const message = error?.response?.data?.msg || error?.message || '登录失败，请稍后重试'
-    ElMessage.error({ message })
+    ElMessage.error({ message,dangerouslyUseHTMLString:true })
     if (error.response?.status === 401) {
       // token 无效或过期，清除并跳转登录
       const userStore = useUserStore()

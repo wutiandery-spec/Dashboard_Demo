@@ -14,7 +14,7 @@
             <div class="flex items-center justify-between gap-2">
               <div class="min-w-0 flex-1">
                 <div class="truncate font-medium">{{ item.name }}</div>
-                <div class="mt-1 text-xs text-gray-500">排序：{{ item.order }}   id : {{ item.id }}</div>
+                <div class="mt-1 text-xs text-gray-500">排序：{{ item.order }} id : {{ item.id }}</div>
               </div>
 
               <div class="flex items-center gap-1">
@@ -33,12 +33,32 @@
       </el-aside>
 
       <el-main>
-        <div v-if="classImageList.length">
-          <el-image v-for="(item, index) in classImageList" :key="item.id" class="m-2 rounded-lg"
-            style="width: 200px; height: 200px" :initial-index="index" :src="item.url" fit="cover"
-            :preview-src-list="srcList" infinite />
+        <div v-if="classImageList.length" class="flex flex-wrap gap-3">
+          <div v-for="(item, index) in classImageList" :key="item.id" class="max-w-50">
+            <div class="relative">
+              <el-image style="width: 200px; height: 200px" :initial-index="index" :src="item.url" fit="cover"
+                :preview-src-list="srcList" infinite />
+              <div class="absolute bottom-0 left-0 right-0 
+                 bg-linear-to-t from-black/60 to-transparent">
+                <span class="text-white text-sm font-medium">{{ item.name }}</span>
+              </div>
+            </div>
+
+            <div class="flex justify-around py-2 border border-gray-300 ">
+              <el-button size="default" type="primary" text @click="handleSetClass(item)">
+                重命名
+              </el-button>
+              <el-button size="default" type="primary" text @click.stop="handleDelete(item)"" :loading="
+                deleteLoadingId===item.id">
+                删除
+              </el-button>
+            </div>
+          </div>
         </div>
         <el-empty v-else description="当前分类下暂无图片" />
+        <el-pagination class="fixed bottom-0 left-1/2" :page-size="9" size="default" background
+          layout="prev, pager, next" :total="total2" :current-page="imgCurrentPage"
+          @current-change="handleImgCurrentChange" />
       </el-main>
     </el-container>
   </el-container>
@@ -62,6 +82,20 @@
       </el-form-item>
     </el-form>
   </AppDrawer>
+
+  <AppDrawer v-model="open2" title="修改图片名称" size="30%" @closed="resetFormState">
+    <el-form :model="form" :rules="rules" label-width="90px">
+      <el-form-item label="图片名称" prop="name">
+        <el-input v-model="form.name" maxlength="50" show-word-limit clearable placeholder="请输入图片名称" />
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" :loading="submitting" @click="onSubmit">
+          {{ submitButtonText }}
+        </el-button>
+        <el-button :disabled="submitting" @click="handleClose">取消</el-button>
+      </el-form-item>
+    </el-form>
+  </AppDrawer>
 </template>
 
 <script setup lang="ts">
@@ -74,15 +108,20 @@ import {
   getClassImage,
   getImageList,
   setImageClass,
+  uploadImage,
+  deleteImage,
+  setImageName,
   type ImageAssetItem,
   type ImageClassItem,
 } from '@/api/modules/imageClass'
+import type { number } from 'echarts'
 
 // 列表状态
 const dataList = ref<ImageClassItem[]>([])
 const classImageList = ref<ImageAssetItem[]>([])
 const srcList = ref<string[]>([])
 const total = ref(0)
+const total2 = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const activeid = ref<number | null>(null)
@@ -90,12 +129,13 @@ const activeid = ref<number | null>(null)
 // 表单状态
 const formRef = ref<FormInstance>()
 const open = ref(false)
+const open2 = ref(false)
 const isEditMode = ref(false)
 const editingId = ref<number | null>(null)
 const submitting = ref(false)
 const deleteLoadingId = ref<number | null>(null)
 const form = reactive({ name: '', order: 100 })
-
+const imgCurrentPage = ref(1)
 const drawerTitle = computed(() => (isEditMode.value ? '修改图库分类' : '新增图库分类'))
 const submitButtonText = computed(() => (isEditMode.value ? '确认修改' : '确认新增'))
 
@@ -129,9 +169,10 @@ async function loadList() {
 async function showClassImage(id: number) {
   try {
     activeid.value = id
-    const response = await getClassImage(id, pageSize.value, 1)
+    const response = await getClassImage(id, 9, imgCurrentPage.value)
     const list = Array.isArray(response.data?.list) ? response.data.list : []
     classImageList.value = list
+    total2.value = response.data.totalCount as number
     srcList.value = list.map((item) => item.url).filter(Boolean)
   } catch (err) {
     console.log(err);
@@ -157,8 +198,12 @@ function handleSetClass(item: ImageClassItem) {
   isEditMode.value = true
   editingId.value = item.id
   form.name = item.name
-  form.order = item.order
-  open.value = true
+  form.order = item.order as number
+  if (item.order) {
+    open.value = true
+  } else {
+    open2.value = true
+  }
 }
 
 // 删除分类（二次确认后直接调接口并刷新）
@@ -169,22 +214,28 @@ async function handleDelete(item: ImageClassItem) {
       confirmButtonText: '确认删除',
       cancelButtonText: '取消',
     })
-  } catch (err) {
-    console.log(err);
-  }
-  deleteLoadingId.value = item.id
-  try {
-    await deleteImageClass(item.id)
-    ElMessage.success('删除分类成功')
-    if (dataList.value.length === 1 && currentPage.value > 1) {
-      currentPage.value -= 1
+
+    deleteLoadingId.value = item.id
+    try {
+      if (item.order) {
+        await deleteImageClass(item.id)
+        ElMessage.success('删除分类成功')
+      } else {
+        await deleteImage([item.id])
+        ElMessage.success('删除图片成功')
+      }
+      if (dataList.value.length === 1 && currentPage.value > 1) {
+        currentPage.value -= 1
+      }
+      activeid.value = activeid.value === item.id ? null : activeid.value
+      await loadList()
+    } catch (err) {
+      console.log(err);
+    } finally {
+      deleteLoadingId.value = null
     }
-    activeid.value = activeid.value === item.id ? null : activeid.value
-    await loadList()
   } catch (err) {
     console.log(err);
-  } finally {
-    deleteLoadingId.value = null
   }
 }
 
@@ -193,14 +244,20 @@ async function onSubmit() {
   submitting.value = true
   try {
     if (isEditMode.value) {
-      await setImageClass(form.name, Number(form.order), editingId.value!)
-      ElMessage.success('修改分类成功')
+      if (open.value) {
+        await setImageClass(form.name, Number(form.order), editingId.value!)
+        ElMessage.success('修改分类成功')
+      } else {
+        await setImageName(editingId.value as number, form.name)
+        ElMessage.success('修改名称成功')
+      }
     } else {
       await addImageClass(form.name, Number(form.order))
       ElMessage.success('新增分类成功')
       currentPage.value = 1
     }
     open.value = false
+    open2.value = false
     await loadList()
   } catch (err) {
     console.log(err);
@@ -211,12 +268,42 @@ async function onSubmit() {
 
 function handleClose() {
   open.value = false
+  open2.value = false
 }
 function resetFormState() {
   isEditMode.value = false
   editingId.value = null
   form.name = ''
   form.order = 0
+}
+
+interface itemType {
+  id: number;
+  url: string;
+  name: string;
+  path: string;
+  create_time: string;
+  update_time: string;
+  image_class_id: number;
+}
+async function handleImgCurrentChange(page: number) {
+  imgCurrentPage.value = page
+  const response = await getClassImage(activeid.value as number, 9, imgCurrentPage.value)
+  const list = Array.isArray(response.data?.list) ? response.data.list : []
+  classImageList.value = list
+  total2.value = response.data.totalCount as number
+  srcList.value = list.map((item) => item.url).filter(Boolean)
+}
+function handleRename(item: itemType) {
+  open2.value = true
+}
+async function handleDeleteImage(item: itemType) {
+  try {
+  } catch (err) {
+
+  } finally {
+
+  }
 }
 
 onMounted(() => {
