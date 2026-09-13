@@ -51,6 +51,7 @@ export default defineConfig({
       compiler: 'vue3', 
     }),
   ],
+  base: '/Dashboard_Demo/',
   server: {
     proxy: {
       '/api': {
