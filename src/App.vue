@@ -1,12 +1,6 @@
+<!-- App.vue -->
 <template>
-<count/>
-<br>
-<LoveTalk/>
+  <el-config-provider :size="'small'" :z-index="3000">
+    <RouterView></RouterView>
+  </el-config-provider>
 </template>
-<script lang="ts" setup name="App">
-import count from '@/components/Count.vue';
-import LoveTalk from '@/components/LoveTalk.vue';
-</script>
-<style scoped>
-
-</style>

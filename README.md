@@ -1,42 +1,63 @@
 # hello_vue_3
 
-This template should help get you started developing with Vue 3 in Vite.
+基于 Vue 3 + TypeScript + Vite + Element Plus + Tailwind CSS v4 的中后台管理项目。
 
-## Recommended IDE Setup
+## 技术栈
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+| 类别 | 技术 | 版本 |
+| --- | --- | --- |
+| 框架 | Vue 3 | ^3.5.32 |
+| 路由 | vue-router | ^5.1.0 |
+| 状态管理 | Pinia + pinia-plugin-persistedstate | ^3.0.4 |
+| UI 库 | Element Plus | ^2.14.3 |
+| 样式 | Tailwind CSS v4 + @tailwindcss/vite | ^4.3.3 |
+| 构建 | Vite（rolldown-vite） | ^8.1.5 |
+| 语言 | TypeScript + vue-tsc | ~6.0.0 |
+| 代码规范 | ESLint 9（flat config）+ Prettier | ^10.x / ^3.x |
 
-## Recommended Browser Setup
+## 常用命令
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
+```bash
+npm run dev         # 启动开发服务
+npm run build       # 类型检查 + 生产构建（run-p type-check "build-only {@}"）
+npm run build-only  # 仅构建
+npm run type-check  # 仅类型检查（vue-tsc --build）
+npm run lint        # 运行 ESLint 检查（vue + ts 文件）
+npm run lint:fix    # 自动修复可修复的 ESLint 问题
+npm run format      # Prettier 格式化 src/ 下全部源码
+npm run preview     # 预览生产构建
 ```
 
-### Compile and Hot-Reload for Development
+## 项目结构
 
-```sh
-npm run dev
 ```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
+src/
+├── api/                    // 接口请求层（统一管理后台接口）
+│   ├── modules/            // 按模块拆分接口
+│   │   ├── user.ts         // 用户模块接口（登录/信息）
+│   │   └── goods.ts        // 商品模块接口
+│   ├── request.ts          // axios 实例封装（拦截器、基础路径）
+│   └── index.ts            // 统一导出所有 API
+│
+├── assets/                 // 静态资源（图片、字体、全局样式）
+│   ├── styles/
+│   │   └── index.css       // 全局样式入口（@import "tailwindcss"）
+│   └── images/
+│
+├── components/             // 公共 UI 组件
+│   ├── common/             // 完全通用的组件
+│   ├── layout/             // 布局组件（AppHeader, AppSidebar, AppTabs, AdminLayout）
+│   └── business/           // 业务公共组件
+│
+├── router/                 // 路由配置
+│   └── index.ts
+│
+├── stores/                 // Pinia 状态管理
+│   ├── user.ts
+│   └── app.ts
+│
+├── utils/                  // 工具函数
+├── views/                  // 页面级组件
+├── App.vue                 // 根组件（el-config-provider 全局 size/z-index 配置）
+└── main.ts                 // 应用入口
 ```
