@@ -1,5 +1,4 @@
 基于 Vue 3 + TypeScript + Vite + Element Plus + Tailwind CSS v4 的中后台管理项目。
-![image-20260915150327153](src\assets\images\image-20260915150145551.png)
 ## 技术栈
 
 | 类别 | 技术 | 版本 |
