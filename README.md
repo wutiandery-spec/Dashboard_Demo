@@ -1,5 +1,5 @@
 基于 Vue 3 + TypeScript + Vite + Element Plus + Tailwind CSS v4 的中后台管理项目。
-
+![alt text](image.png)
 ## 技术栈
 
 | 类别 | 技术 | 版本 |

@@ -1,9 +1,20 @@
 <template>
-  <el-container class="h-full">
-    <el-header class="border-b border-b-gray-200">
+  <el-container class="h-full" >
+    <el-header class="border-b border-b-gray-200 flex gap-3">
       <el-button type="primary" :icon="Plus" size="default" @click="handleAddClass">
         添加分类
       </el-button>
+      <el-upload
+      action="#"
+      :http-request="customUpload"
+      list-type="text"
+      :multiple="true"
+      :show-file-list="false"
+      >
+      <el-button type="primary" :icon="Plus" size="default"  color="#d4c92c">
+        添加图片
+      </el-button>
+    </el-upload>
     </el-header>
 
     <el-container class="overflow-auto">
@@ -17,9 +28,9 @@
                 <div class="mt-1 text-xs text-gray-500">排序：{{ item.order }} id : {{ item.id }}</div>
               </div>
 
-              <div class="flex items-center gap-1">
-                <el-button text size="small" type="primary" :icon="Edit" circle @click.stop="handleSetClass(item)" />
-                <el-button text size="small" type="danger" :icon="Delete" circle :loading="deleteLoadingId === item.id"
+              <div class="flex items-center">
+                <el-button text size="default" type="primary" :icon="Edit" circle @click.stop="handleSetClass(item)" />
+                <el-button text size="default" type="danger" :icon="Delete" circle class='ml-0!' :loading="deleteLoadingId === item.id"
                   @click.stop="handleDelete(item)" />
               </div>
             </div>
@@ -33,28 +44,30 @@
       </el-aside>
 
       <el-main>
-        <div v-if="classImageList.length" class="flex flex-wrap gap-3">
-          <div v-for="(item, index) in classImageList" :key="item.id" class="max-w-50">
+        <el-row :gutter="10" v-if="classImageList.length" >
+          <el-col :span="6" :offset="0" v-for="(item, index) in classImageList" :key="item.id" class="">
+            <el-card shadow="hover" class="mb-2" :bodyStyle="{padding:0}">
             <div class="relative">
-              <el-image style="width: 200px; height: 200px" :initial-index="index" :src="item.url" fit="cover"
+              <el-image class="w-full h-40" :initial-index="index" :src="item.url" fit="scale-down"
                 :preview-src-list="srcList" infinite />
               <div class="absolute bottom-0 left-0 right-0 
-                 bg-linear-to-t from-black/60 to-transparent">
+                 bg-linear-to-t from-gray-600/60 to-transparent overflow-hidden">
                 <span class="text-white text-sm font-medium">{{ item.name }}</span>
               </div>
             </div>
 
-            <div class="flex justify-around py-2 border border-gray-300 ">
+            <div class="flex justify-around py-2 border-t border-gray-300 overflow-hidden">
               <el-button size="default" type="primary" text @click="handleSetClass(item)">
                 重命名
               </el-button>
-              <el-button size="default" type="primary" text @click.stop="handleDelete(item)"" :loading="
+              <el-button size="default" type="primary" text @click.stop="handleDelete(item)" :loading="
                 deleteLoadingId===item.id">
                 删除
               </el-button>
             </div>
-          </div>
-        </div>
+            </el-card>
+          </el-col>
+        </el-row>
         <el-empty v-else description="当前分类下暂无图片" />
         <el-pagination class="fixed bottom-0 left-1/2" :page-size="9" size="default" background
           layout="prev, pager, next" :total="total2" :current-page="imgCurrentPage"
@@ -305,6 +318,23 @@ async function handleDeleteImage(item: itemType) {
 
   }
 }
+import type { UploadRequestOptions } from 'element-plus'
+import { UploadAjaxError } from 'element-plus/es/components/upload/src/ajax.mjs'
+const customUpload = async (options: UploadRequestOptions) => {
+  try {
+    const res = await uploadImage({
+      imageClassId: activeid.value as number,
+      fileList: [options.file],
+    })
+    options.onSuccess(res.data)
+    ElMessage.success('上传成功')
+    void showClassImage(activeid.value as number)
+  } catch (err) {
+    options.onError(err as UploadAjaxError)
+    ElMessage.error('上传失败')
+  }
+}
+
 
 onMounted(() => {
   void loadList()

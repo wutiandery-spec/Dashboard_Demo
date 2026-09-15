@@ -1,1 +1,1 @@
-<template>用户管理</template>
+<template>公告管理</template>
