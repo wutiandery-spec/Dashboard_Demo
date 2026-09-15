@@ -1,5 +1,5 @@
 基于 Vue 3 + TypeScript + Vite + Element Plus + Tailwind CSS v4 的中后台管理项目。
-![image-20260915150327153](src\assets\images\image-20260915150145551.png)
+[![image-20260915150327153](src\assets\images\image-20260915150145551.png)](https://github.com/wutiandery-spec/Dashboard_Demo/blob/e61e120a5b89445b1c9ed8cf26a83fef5239ff3e/src/assets/images/image-20260915150145551.png?raw=true)
 ## 技术栈
 
 | 类别 | 技术 | 版本 |
