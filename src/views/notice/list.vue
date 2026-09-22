@@ -51,12 +51,12 @@
             </el-table-column>
             <el-table-column label="操作" width="150">
                 <template #default="scope">
-                    <el-button size="small" @click.stop="handleEdit(scope.$index, scope.row)">
+                    <el-button size="small" @click.stop="handleEdit(scope.$index, scope.row)" link type="primary">
                         编辑
                     </el-button>
                     <el-popconfirm title="确认删除吗?" @confirm="handleDelete(scope.$index, scope.row)">
                         <template #reference>
-                            <el-button :loading="loading" size="small" type="danger">
+                            <el-button :loading="loading" size="small" link type="primary">
                                 删除
                             </el-button>
                         </template>
@@ -67,7 +67,6 @@
         <template #footer>
             <div class="flex justify-center">
                 <el-pagination layout="prev, pager, next" :total="total" @current-change="handleChange" />
-
             </div>
         </template>
     </el-card>

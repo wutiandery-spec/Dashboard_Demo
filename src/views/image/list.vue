@@ -1,23 +1,19 @@
 <template>
-  <el-container class="h-full" >
+  <el-container class="h-full">
+    <!-- 头部区域 -->
     <el-header class="border-b border-b-gray-200 flex gap-3">
       <el-button type="primary" :icon="Plus" size="default" @click="handleAddClass">
         添加分类
       </el-button>
-      <el-upload
-      action="#"
-      :http-request="customUpload"
-      list-type="text"
-      :multiple="true"
-      :show-file-list="false"
-      >
-      <el-button type="primary" :icon="Plus" size="default"  color="#d4c92c">
-        添加图片
-      </el-button>
-    </el-upload>
+      <el-upload action="#" :http-request="customUpload" list-type="text" :multiple="true" :show-file-list="false">
+        <el-button type="primary" :icon="Plus" size="default" color="#d4c92c">
+          添加图片
+        </el-button>
+      </el-upload>
     </el-header>
-
+    <!-- 内容区域 -->
     <el-container class="overflow-auto">
+      <!-- 侧边栏区域 -->
       <el-aside width="260px" class="border-r border-r-gray-200 flex flex-col items-center">
         <div class="w-full flex-1 overflow-auto px-2 py-2">
           <div v-for="item in dataList" :key="item.id" class="mb-2 rounded-lg hover:bg-blue-100 p-2"
@@ -30,8 +26,8 @@
 
               <div class="flex items-center">
                 <el-button text size="default" type="primary" :icon="Edit" circle @click.stop="handleSetClass(item)" />
-                <el-button text size="default" type="danger" :icon="Delete" circle class='ml-0!' :loading="deleteLoadingId === item.id"
-                  @click.stop="handleDelete(item)" />
+                <el-button text size="default" type="danger" :icon="Delete" circle class='ml-0!'
+                  :loading="deleteLoadingId === item.id" @click.stop="handleDelete(item)" />
               </div>
             </div>
           </div>
@@ -42,29 +38,28 @@
         <el-pagination class="pb-3" background layout="prev, next" :total="total" :current-page="currentPage"
           :page-size="pageSize" @current-change="handleCurrentChange" />
       </el-aside>
-
+      <!-- 内容展示区域 -->
       <el-main>
-        <el-row :gutter="10" v-if="classImageList.length" >
+        <el-row :gutter="10" v-if="classImageList.length">
           <el-col :span="6" :offset="0" v-for="(item, index) in classImageList" :key="item.id" class="">
-            <el-card shadow="hover" class="mb-2" :bodyStyle="{padding:0}">
-            <div class="relative">
-              <el-image class="w-full h-40" :initial-index="index" :src="item.url" fit="scale-down"
-                :preview-src-list="srcList" infinite />
-              <div class="absolute bottom-0 left-0 right-0 
+            <el-card shadow="hover" class="mb-2" :bodyStyle="{ padding: 0 }">
+              <div class="relative">
+                <el-image class="w-full h-40" :initial-index="index" :src="item.url" fit="scale-down"
+                  :preview-src-list="srcList" infinite />
+                <div class="absolute bottom-0 left-0 right-0 
                  bg-linear-to-t from-gray-600/60 to-transparent overflow-hidden">
-                <span class="text-white text-sm font-medium">{{ item.name }}</span>
+                  <span class="text-white text-sm font-medium">{{ item.name }}</span>
+                </div>
               </div>
-            </div>
 
-            <div class="flex justify-around py-2 border-t border-gray-300 overflow-hidden">
-              <el-button size="default" type="primary" text @click="handleSetClass(item)">
-                重命名
-              </el-button>
-              <el-button size="default" type="primary" text @click.stop="handleDelete(item)" :loading="
-                deleteLoadingId===item.id">
-                删除
-              </el-button>
-            </div>
+              <div class="flex justify-around py-2 border-t border-gray-300 overflow-hidden">
+                <el-button size="default" type="primary" text @click="handleSetClass(item)">
+                  重命名
+                </el-button>
+                <el-button size="default" type="primary" text @click.stop="handleDelete(item)" :loading="deleteLoadingId === item.id">
+                  删除
+                </el-button>
+              </div>
             </el-card>
           </el-col>
         </el-row>
