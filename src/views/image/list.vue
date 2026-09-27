@@ -6,7 +6,7 @@
         添加分类
       </el-button>
       <el-upload action="#" :http-request="customUpload" list-type="text" :multiple="true" :show-file-list="false">
-        <el-button type="primary" :icon="Plus" size="default" color="#d4c92c">
+        <el-button type="warning" :icon="Plus" size="default">
           添加图片
         </el-button>
       </el-upload>
@@ -64,7 +64,7 @@
           </el-col>
         </el-row>
         <el-empty v-else description="当前分类下暂无图片" />
-        <el-pagination class="fixed bottom-0 left-1/2" :page-size="9" size="default" background
+        <el-pagination class="fixed bottom-0 left-1/2" size="default" background
           layout="prev, pager, next" :total="total2" :current-page="imgCurrentPage"
           @current-change="handleImgCurrentChange" />
       </el-main>
@@ -177,7 +177,7 @@ async function loadList() {
 async function showClassImage(id: number) {
   try {
     activeid.value = id
-    const response = await getClassImage(id, 9, imgCurrentPage.value)
+    const response = await getClassImage(id, 12, imgCurrentPage.value)
     const list = Array.isArray(response.data?.list) ? response.data.list : []
     classImageList.value = list
     total2.value = response.data.totalCount as number

@@ -71,10 +71,11 @@
         </el-table>
         <template #footer>
             <div class="flex justify-center">
-                <el-pagination layout="prev, pager, next" :total="total" @current-change="handleChange" />
+                <el-pagination :current-page="page" layout="prev, pager, next" :total="total" @current-change="handleChange" />
             </div>
         </template>
     </el-card>
+    <!-- 修改-新增打开的抽屉 -->
     <AppDrawer v-model="visible" :title="title" @close="handleClose">
         <el-form :model="form" label-width="auto" ref="formRef" size="small" label-position="left">
             <el-form-item label="用户名 : ">
@@ -87,6 +88,11 @@
                 <el-button size="large" class="h-20!"><el-icon size="50" @click="openDialog">
                         <Plus />
                     </el-icon></el-button>
+                <div class="relative">
+                    <el-button v-if="form.avatar" type="danger" :icon="Delete" circle class="absolute bottom-0 -right-1"
+                        @click="form.avatar = ''" />
+                    <el-avatar v-if="form.avatar" :size="80" class="ml-3" :src="form.avatar"></el-avatar>
+                </div>
             </el-form-item>
             <el-form-item label="启用状态 : ">
                 <el-switch v-model="form.status" :active-value="1" :inactive-value="0" />
@@ -117,16 +123,23 @@
                         </div>
                         <el-empty v-if="!imageDataList.length" description="暂无图库分类" />
                     </div>
-                    <el-pagination class="pb-3" background layout="prev, next" :total="classListTotal" :current-page="page"
-                        @current-change="handleListChange" />
+                    <el-pagination class="pb-3" background layout="prev, next" :total="classListTotal"
+                        :current-page="page" @current-change="handleListChange" />
                 </el-aside>
-                <el-main>
-                    <el-row :gutter="10" v-if="classImageList.length">
-                        <el-col :span="6" :offset="0" v-for="(item, index) in classImageList" :key="item.id" class="">
-                            <el-card shadow="hover" class="mb-2" :bodyStyle="{ padding: 0 }">
+                <el-main class="relative">
+                    <el-row :gutter="20" v-if="classImageList.length">
+                        <el-col :span="6" :offset="0" v-for="(item, index) in classImageList" :key="item.id"
+                            class="mb-3">
+                            <el-card @click.stop="handleSelect(item)" shadow="hover" class="mb-2 relative"
+                                :bodyStyle="{ padding: 0 }" :class="{ active: selectId === item.id }">
+                                <!-- 选择框 -->
+                                <div v-if="item.selectStatus" class="absolute right-1 -top-2"><el-checkbox
+                                        v-model="item.selectStatus" size="large" class="" />
+                                </div>
                                 <div class="relative">
                                     <el-image class="w-full h-40" :initial-index="index" :src="item.url"
-                                        fit="scale-down" :preview-src-list="srcList" infinite />
+                                        fit="scale-down" infinite>
+                                    </el-image>
                                     <div class="absolute bottom-0 left-0 right-0 
                  bg-linear-to-t from-gray-600/60 to-transparent overflow-hidden">
                                         <span class="text-white text-sm font-medium">{{ item.name }}</span>
@@ -135,9 +148,14 @@
                             </el-card>
                         </el-col>
                     </el-row>
-                    <el-empty v-else description="当前分类下暂无图片" class="h-[90%]"/>
-                    <el-pagination class="justify-center" size="small" background layout="prev, pager, next" :total="imageListTotal"
-                        :current-page="page" @current-change="handleImageChange" />
+                    <el-empty v-else description="当前分类下暂无图片" class="h-[90%]" />
+                    <el-pagination class="absolute left-1/2 -translate-x-1/2 bottom-3 " size="small" background
+                        layout="prev, pager, next" :total="imageListTotal" :current-page="page"
+                        @current-change="handleImageChange" />
+                    <div class="absolute right-1 bottom-3">
+                        <el-button type="primary" @click="hanleConfirmAvatar">确认</el-button>
+                        <el-button @click="handleCancel">取消</el-button>
+                    </div>
                 </el-main>
             </el-container>
         </el-card>
@@ -146,184 +164,51 @@
 
 <script setup lang="ts">
 import AppDrawer from '@/components/layout/AppDrawer.vue'
-import type { FormInstance } from 'element-plus'
-import { getManagerList, addManagerList, deleteManagerList, setManager, updateManagerState, } from '@/api/modules/manager'
-import { Plus } from '@element-plus/icons-vue'
-const searchFormRef = ref<FormInstance>()
-const formRef = ref<FormInstance>()
-const page = ref(1)
-const total = ref(0)
-const onEditId = ref(0)
-const roleList = ref([])
-const visible = ref(false)
-const dialogVisible = ref(false)
-const loading = ref(false)
-const editState = ref(false)
-const title = computed(() => (editState.value ? '修改管理员' : '新增管理员'))
-const options = ref<[{ id: number, name: string }] | []>([])
-const form = ref({
-    username: '',
-    password: '',
-    role_id: '',
-    status: 1,
-    avatat: ''
-})
+import { Delete, Plus } from '@element-plus/icons-vue'
 
-const searchForm = reactive({
-    keyword: ''
-})
-
-const getList = async () => {
-    loading.value = true
-    try {
-        const res = await getManagerList(page.value, 10, searchForm.keyword ? searchForm.keyword : '')
-        roleList.value = res.data.list.map((item: { statusLoading: boolean }) => {
-            item.statusLoading = false
-            return item
-        })
-        total.value = res.data.totalCount
-        options.value = res.data.roles
-    } finally {
-        loading.value = false
-    }
-}
-getList()
-
-const resetForm = (formEl: FormInstance | undefined) => {
-    if (!formEl) return
-    searchForm.keyword = ''
-    getList()
-}
-const addManager = () => {
-    visible.value = true
-    editState.value = false
-}
+import { useTable } from '@/hooks/useTable';
+const {
+    searchFormRef,
+    formRef,
+    page,
+    total,
+    roleList,
+    visible,
+    dialogVisible,
+    loading,
+    activeid,
+    title,
+    options,
+    searchForm,
+    form,
+    imageDataList,
+    classListTotal,
+    imageListTotal,
+    selectId,
+    classImageList,
+    getList,
+    resetForm,
+    addManager,
+    hanleStatusChange,
+    handleEdit,
+    handleDelete,
+    handleClose,
+    handleConfirm,
+    handleChange,
+    handleListChange,
+    handleImageChange,
+    openDialog,
+    showClassImage,
+    handleSelect,
+    hanleConfirmAvatar,
+    handleCancel,
+} = useTable()
 
 
-/* 修改状态开启或关闭 */
-const hanleStatusChange = async (status: any, row: any) => {
-    row.statusLoading = true
-    try {
-        const res = await updateManagerState(row.id, status)
-        row.status = status
-        if (status) {
-            ElMessage({ message: "已开启", type: "success" })
-        } else {
-            ElMessage({ message: "已关闭", type: "warning" })
-        }
-    } finally {
-        row.statusLoading = false
-    }
-}
-
-const handleEdit = async (index: number, row: any) => {
-    editState.value = true
-    visible.value = true
-    onEditId.value = row.id as number
-    form.value.username = row.username
-}
-/* 删除功能 */
-const handleDelete = async (index: number, row: any) => {
-    loading.value = true
-    try {
-        deleteManagerList(row.id as number)
-        ElMessage({ message: "删除成功", type: 'success' })
-        getList()
-    }
-    catch (err: any) {
-        console.log(err);
-    }
-    finally {
-        loading.value = false
-    }
-}
-
-const handleClose = () => {
-    form.value = {
-        username: '',
-        password: '',
-        role_id: '',
-        status: 1,
-        avatat: ''
-    }
-}
-/* 按下提交后处理 */
-const handleConfirm = async (formRef: FormInstance | undefined) => {
-    if (!formRef) return
-    formRef.validate(async (valid) => {
-        if (valid) {
-            loading.value = true
-            try {
-                if (editState.value) {
-                    setManager(onEditId.value, form.value)
-                    visible.value = false
-                    ElMessage({ message: "修改成功", type: "success" })
-                } else {
-                    addManagerList(form.value)
-                    visible.value = false
-                    ElMessage({ message: "增加成功", type: "success" })
-                }
-            }
-            catch (err: any) {
-                const message = err.data.msg || '增加失败'
-                ElMessage({ message, type: 'warning' })
-            }
-            finally {
-                loading.value = false
-            }
-        }
-    })
-}
-/* 页面改变触发 */
-const handleChange = (pag: any) => {
-    page.value = pag
-    getList()
-    ElMessage({ message: "已更新", type: "success" })
-}
-const handleListChange = (pag: any) => {
-    page.value = pag
-    getdata()
-}
-const activeid = ref(0)
-const handleImageChange = (pag: any) => {
-    page.value = pag
-    showClassImage(activeid.value)
-}
-/* 打开图库选图 */
-import  {getClassImage,getImageList, type ImageClassItem,type ImageAssetItem, } from '@/api/modules/imageClass'
-const imageDataList = ref<ImageClassItem[] | []>([])
-const classListTotal = ref(0)
-const getdata = async () => {
-    try{
-        const res =await getImageList(10,page.value)
-        imageDataList.value = res.data.list
-        classListTotal.value = res.data.totalCount as number
-        showClassImage(res.data.list[0]?.id as number)
-    }finally{
-
-    }
-}
-const openDialog = () => {
-    dialogVisible.value = true
-    getdata()
-}
-const srcList = ref([])
-const classImageList = ref<ImageAssetItem[]>([])
-const imageListTotal = ref(0)
-const showClassImage =async (id: number) => {
-    try{
-        activeid.value = id
-        const res = await getClassImage(id,12,page.value)
-        classImageList.value = res.data.list
-        imageListTotal.value =res.data.totalCount as number
-    }finally{
-
-    }
-}
 </script>
 
 <style scoped>
 .active {
-  background-color: rgb(222, 227, 255);
+    background-color: rgb(222, 227, 255);
 }
 </style>

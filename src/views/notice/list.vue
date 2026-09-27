@@ -111,6 +111,7 @@ const formRef = ref<FormInstance>()
 const editState = ref(false)
 const onEditId = ref(0)
 const title = computed(() => (editState.value ? '修改公告' : '新增公告'))
+
 const form = reactive({
     title: '',
     content: '',

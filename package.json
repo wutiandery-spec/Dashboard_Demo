@@ -1,6 +1,6 @@
 {
-  "name": "hello_vue_3",
-  "version": "0.0.0",
+  "name": "Dashboard_Demo",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {

@@ -6,5 +6,5 @@ export function getStatistics2() {
     return axios.get('/statistics2')
 }
 export function getStatistics3(type:string) {
-    return axios.get('/statistics3' + '#' + type)
+    return axios.get(`/statistics3`,{params:{type}})
 }

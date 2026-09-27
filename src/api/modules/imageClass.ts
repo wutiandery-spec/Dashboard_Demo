@@ -21,6 +21,7 @@ export interface ImageAssetItem {
   create_time: string
   update_time: string
   image_class_id: number
+  selectStatus?:boolean
 }
 
 export interface PaginationList<T> {

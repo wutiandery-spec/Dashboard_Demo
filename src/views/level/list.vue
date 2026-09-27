@@ -1,1 +1,15 @@
-<template>用户管理</template>
+<template>
+  <div>
+    
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { defineComponent } from 'vue'
+
+</script>
+
+<style scoped>
+
+</style>
+
