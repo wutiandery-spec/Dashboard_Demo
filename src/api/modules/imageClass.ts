@@ -1,4 +1,5 @@
-import axios from '@/api/request'
+import request from '@/api/request'
+import { createCrudApi } from '@/api/factory'
 import type { ApiResponse } from '@/type'
 
 export interface ImageClassItem {
@@ -29,43 +30,38 @@ export interface PaginationList<T> {
   totalCount?: number
 }
 
-export interface ImageClassSubmitPayload {
-  data: {
-    name: string
-    order: number
-  }
-}
-
 export type ImageClassListResponse = ApiResponse<PaginationList<ImageClassItem>>
 export type ImageAssetListResponse = ApiResponse<PaginationList<ImageAssetItem>>
 export type ImageClassActionResponse<T = unknown> = ApiResponse<T>
 
+const imageClassApi = createCrudApi('image_class')
+
 export function getImageList(limit: number, page: number) {
-  return axios.get(`/image_class/${page}`, { params: { limit } }) as Promise<ImageClassListResponse>
+  return imageClassApi.list(page, { limit }) as Promise<ImageClassListResponse>
 }
 
 export function getClassImage(id: number, limit: number, page: number) {
-  return axios.get(`/image_class/${id}/image/${page}`, {
+  return request.get(`/image_class/${id}/image/${page}`, {
     params: { limit },
   }) as Promise<ImageAssetListResponse>
 }
 
 export function deleteImageClass(id: number) {
-  return axios.post(`/image_class/${id}/delete`) as Promise<ImageClassActionResponse>
+  return imageClassApi.remove(id) as Promise<ImageClassActionResponse>
 }
 
 export function addImageClass(name: string, order: number) {
-  return axios.post(`/image_class`, { name, order }) as Promise<ImageClassActionResponse>
+  return imageClassApi.add({ name, order }) as Promise<ImageClassActionResponse>
 }
 
 export function setImageClass(name: string, order: number, id: number) {
-  return axios.post(`/image_class/${id}`, { name, order }) as Promise<ImageClassActionResponse>
+  return imageClassApi.update(id, { name, order }) as Promise<ImageClassActionResponse>
 }
 export function deleteImage(ids: number[]) {
-  return axios.post('/image/delete_all', { ids })
+  return request.post('/image/delete_all', { ids })
 }
 export function setImageName(id: number, name: string) {
-  return axios.post(`/image/${id}`, { name })
+  return request.post(`/image/${id}`, { name })
 }
 import type { AxiosResponse } from 'axios'
 export interface UploadImageParams {
@@ -100,7 +96,7 @@ export function uploadImage(params: UploadImageParams): Promise<AxiosResponse<Up
   fileList.forEach(file => {
     formData.append('img[]', file)
   })
-  return axios.post(
+  return request.post(
     '/image/upload',
     formData,
   )

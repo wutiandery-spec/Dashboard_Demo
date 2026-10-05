@@ -1,13 +1,16 @@
 import { useUserStore } from '@/stores/user'
 import router from '@/router'
+import { confirmAction } from '@/utils/confirm'
+import { toast } from '@/utils/feedback'
 
 /**
- * 退出登录确认弹窗
+ * 通用操作确认弹窗（默认用于退出登录）
  * @param content 弹窗内容
- * @param type 弹窗类型（success/warning/info/error）
+ * @param typeOrOnConfirm 弹窗类型（success/warning/info/error）或确认回调
  * @param title 弹窗标题
+ * @param onConfirm 确认回调
  */
-export const openModal = (
+export const openModal = async (
   content = '确认退出登录吗？',
   typeOrOnConfirm: 'success' | 'warning' | 'info' | 'error' | (() => void | Promise<void>) = 'warning',
   title = '提示',
@@ -16,30 +19,13 @@ export const openModal = (
   const type = typeof typeOrOnConfirm === 'function' ? 'warning' : typeOrOnConfirm
   const confirmHandler = typeof typeOrOnConfirm === 'function' ? typeOrOnConfirm : onConfirm
 
-  ElMessageBox.confirm(content, title, {
-    confirmButtonText: '确认',
-    cancelButtonText: '取消',
-    type: type,
-    distinguishCancelAndClose: true,
-  })
-    .then(async () => {
-      try {
-        if (confirmHandler) {
-          await confirmHandler()
-        } else {
-          const userStore = useUserStore()
-          userStore.logout()
-          await router.push('/login')
-        }
-        ElMessage.success('已退出账号')
-      } catch (error) {
-        ElMessage.error('退出失败，请重试')
-        console.error('退出登录异常:', error)
-      }
-    })
-    .catch((action) => {
-      if (action === 'cancel' || action === 'close') {
-        ElMessage.info('已取消')
-      }
-    })
+  if (!(await confirmAction(content, { title, type }))) return toast.info('已取消')
+
+  if (confirmHandler) {
+    await confirmHandler()
+  } else {
+    useUserStore().logout()
+    await router.push('/login')
+  }
+  toast.success('已退出账号')
 }

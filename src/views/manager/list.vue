@@ -2,22 +2,21 @@
     <el-card shadow='always'>
         <!-- 搜索,新增,刷新 -->
         <template #header>
-            <el-form ref="searchFormRef" style="max-width: 600px" :model="searchForm" label-width="auto"
-                class="flex gap-4">
+            <el-form style="max-width: 600px" :model="searchForm" label-width="auto" class="flex gap-4">
                 <el-form-item label="搜索 :">
                     <el-input v-model="searchForm.keyword" type='text' autocomplete="off" placeholder="关键词" />
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" @click="getList">
+                    <el-button type="primary" @click="handleSearch">
                         搜索
                     </el-button>
-                    <el-button @click="resetForm(searchFormRef)">重置</el-button>
+                    <el-button @click="handleReset">重置</el-button>
                 </el-form-item>
             </el-form>
             <div class="flex items-center justify-between">
-                <el-button type="primary" @click="addManager">新增</el-button>
+                <el-button type="primary" @click="handleAdd">新增</el-button>
                 <el-tooltip content="刷新数据" effect="light">
-                    <el-button link @click="handleChange(1)">
+                    <el-button link @click="getList">
                         <el-icon size="20">
                             <Refresh />
                         </el-icon>
@@ -48,17 +47,17 @@
             <el-table-column label="状态" width="120">
                 <template #default="{ row }">
                     <el-switch :loading="row.statusLoading" :model-value="row.status" size="default" :active-value="1"
-                        :disabled="row.super === 1" :inactive-value="0" @change="hanleStatusChange($event, row)" />
+                        :disabled="row.super === 1" :inactive-value="0" @change="handleStatusChange($event, row)" />
                 </template>
             </el-table-column>
             <el-table-column label="操作" width="120">
                 <template #default="scope">
                     <p v-if="scope.row.super === 1">暂无操作</p>
                     <div v-else>
-                        <el-button size="small" @click.stop="handleEdit(scope.$index, scope.row)" link type="primary">
+                        <el-button size="small" @click.stop="handleEdit(scope.row)" link type="primary">
                             编辑
                         </el-button>
-                        <el-popconfirm title="确认删除吗?" @confirm="handleDelete(scope.$index, scope.row)">
+                        <el-popconfirm title="确认删除吗?" @confirm="handleDelete(scope.row)">
                             <template #reference>
                                 <el-button :loading="loading" size="small" link type="primary">
                                     删除
@@ -103,7 +102,7 @@
                 </el-select>
             </el-form-item>
             <el-form-item>
-                <el-button type="primary" @click="handleConfirm(formRef)">确认</el-button>
+                <el-button type="primary" @click="handleConfirm">确认</el-button>
                 <el-button @click="visible = false">取消</el-button>
             </el-form-item>
         </el-form>
@@ -115,7 +114,7 @@
                 <el-aside width="260px" class="border-r border-r-gray-200 flex flex-col items-center">
                     <div class="w-full flex-1 overflow-auto px-2 py-2">
                         <div v-for="item in imageDataList" :key="item.id" class="mb-2 rounded-lg hover:bg-blue-100 p-2"
-                            :class="{ active: activeid === item.id }" @click="showClassImage(item.id)">
+                            :class="{ active: activeid === item.id }" @click="selectClass(item.id)">
                             <div class="min-w-0 flex-1">
                                 <div class="truncate font-medium">{{ item.name }}</div>
                                 <div class="mt-1 text-xs text-gray-500">排序：{{ item.order }} id : {{ item.id }}</div>
@@ -124,17 +123,17 @@
                         <el-empty v-if="!imageDataList.length" description="暂无图库分类" />
                     </div>
                     <el-pagination class="pb-3" background layout="prev, next" :total="classListTotal"
-                        :current-page="page" @current-change="handleListChange" />
+                        :current-page="classPage" @current-change="handleClassPageChange" />
                 </el-aside>
                 <el-main class="relative">
                     <el-row :gutter="20" v-if="classImageList.length">
                         <el-col :span="6" :offset="0" v-for="(item, index) in classImageList" :key="item.id"
                             class="mb-3">
-                            <el-card @click.stop="handleSelect(item)" shadow="hover" class="mb-2 relative"
+                            <el-card @click.stop="selectAsset(item)" shadow="hover" class="mb-2 relative"
                                 :bodyStyle="{ padding: 0 }" :class="{ active: selectId === item.id }">
                                 <!-- 选择框 -->
                                 <div v-if="item.selectStatus" class="absolute right-1 -top-2"><el-checkbox
-                                        v-model="item.selectStatus" size="large" class="" />
+                                        :model-value="item.selectStatus" size="large" @click.stop="selectAsset(item)" />
                                 </div>
                                 <div class="relative">
                                     <el-image class="w-full h-40" :initial-index="index" :src="item.url"
@@ -150,10 +149,10 @@
                     </el-row>
                     <el-empty v-else description="当前分类下暂无图片" class="h-[90%]" />
                     <el-pagination class="absolute left-1/2 -translate-x-1/2 bottom-3 " size="small" background
-                        layout="prev, pager, next" :total="imageListTotal" :current-page="page"
-                        @current-change="handleImageChange" />
+                        layout="prev, pager, next" :total="imageListTotal" :current-page="imagePage"
+                        @current-change="handleImagePageChange" />
                     <div class="absolute right-1 bottom-3">
-                        <el-button type="primary" @click="hanleConfirmAvatar">确认</el-button>
+                        <el-button type="primary" @click="handleConfirmAvatar">确认</el-button>
                         <el-button @click="handleCancel">取消</el-button>
                     </div>
                 </el-main>
@@ -165,46 +164,99 @@
 <script setup lang="ts">
 import AppDrawer from '@/components/layout/AppDrawer.vue'
 import { Delete, Plus } from '@element-plus/icons-vue'
+import {
+    addManagerList,
+    deleteManagerList,
+    getManagerList,
+    setManager,
+    updateManagerState,
+} from '@/api/modules/manager'
+import { useCrudTable } from '@/hooks/useCrudTable'
+import { useImageGallery } from '@/hooks/useImageGallery'
 
-import { useTable } from '@/hooks/useTable';
+const options = ref<{ id: number; name: string }[]>([])
+const searchForm = reactive({ keyword: '' })
+
 const {
-    searchFormRef,
-    formRef,
-    page,
-    total,
-    roleList,
-    visible,
-    dialogVisible,
+    dataList: roleList,
     loading,
-    activeid,
-    title,
-    options,
-    searchForm,
+    total,
+    page,
+    visible,
+    formRef,
     form,
-    imageDataList,
-    classListTotal,
-    imageListTotal,
-    selectId,
-    classImageList,
+    title,
     getList,
-    resetForm,
-    addManager,
-    hanleStatusChange,
+    handleChange,
+    handleAdd,
     handleEdit,
     handleDelete,
     handleClose,
     handleConfirm,
-    handleChange,
-    handleListChange,
-    handleImageChange,
-    openDialog,
-    showClassImage,
-    handleSelect,
-    hanleConfirmAvatar,
-    handleCancel,
-} = useTable()
+    handleStatusChange,
+} = useCrudTable({
+    api: {
+        list: (page, params = {}) => getManagerList(page, params.limit, params.keyword),
+        add: addManagerList,
+        update: setManager,
+        remove: deleteManagerList,
+        updateStatus: updateManagerState,
+    },
+    defaults: () => ({ username: '', password: '', role_id: '', status: 1, avatar: '' }),
+    titles: ['修改管理员', '新增管理员'],
+    params: () => (searchForm.keyword ? { keyword: searchForm.keyword } : {}),
+    onData: (data) => {
+        options.value = data.roles ?? []
+    },
+    mapRow: (row) => ({ ...row, statusLoading: false }),
+    toForm: (row) => ({ username: row.username, role_id: row.role_id, avatar: row.avatar }),
+})
 
+/** 搜索 / 重置 */
+const handleSearch = () => {
+    page.value = 1
+    getList()
+}
+const handleReset = () => {
+    searchForm.keyword = ''
+    handleSearch()
+}
 
+/** 图库选择：分类与图片分页、单选回填头像 */
+const dialogVisible = ref(false)
+const {
+    classList: imageDataList,
+    classTotal: classListTotal,
+    classPage,
+    imageList: classImageList,
+    imageTotal: imageListTotal,
+    imagePage,
+    activeId: activeid,
+    selectedId: selectId,
+    loadClasses,
+    selectClass,
+    selectAsset,
+    clearSelection,
+    handleClassPageChange,
+    handleImagePageChange,
+} = useImageGallery({
+    onSelect: (item) => {
+        form.value.avatar = item.url
+    },
+})
+
+const openDialog = () => {
+    dialogVisible.value = true
+    clearSelection()
+    loadClasses(1)
+}
+const handleConfirmAvatar = () => {
+    dialogVisible.value = false
+}
+const handleCancel = () => {
+    dialogVisible.value = false
+    clearSelection()
+}
 </script>
 
 <style scoped>

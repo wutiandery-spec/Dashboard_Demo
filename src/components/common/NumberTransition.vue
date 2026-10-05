@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import { useTransition } from '@vueuse/core'
+import { formatNumber } from '@/utils/format'
 
 const props = withDefaults(
   defineProps<{
@@ -16,9 +17,7 @@ const props = withDefaults(
 const source = ref(0)
 const output = useTransition(source, { duration: 1000 })
 
-const displayText = computed(() =>
-  output.value.toFixed(props.precision).replace(/\B(?=(\d{3})+(?!\d))/g, ','),
-)
+const displayText = computed(() => formatNumber(output.value, props.precision))
 
 watch(
   () => props.value,

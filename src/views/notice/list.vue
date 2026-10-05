@@ -2,9 +2,9 @@
     <el-card>
         <template #header>
             <div class="flex items-center justify-between">
-                <el-button type="primary" @click="addNotice">新增</el-button>
+                <el-button type="primary" @click="handleAdd">新增</el-button>
                 <el-tooltip content="刷新数据" effect="light">
-                    <el-button link @click="handleChange(page)"><el-icon size="20">
+                    <el-button link @click="getList"><el-icon size="20">
                             <Refresh />
                         </el-icon></el-button>
                 </el-tooltip>
@@ -51,10 +51,10 @@
             </el-table-column>
             <el-table-column label="操作" width="150">
                 <template #default="scope">
-                    <el-button size="small" @click.stop="handleEdit(scope.$index, scope.row)" link type="primary">
+                    <el-button size="small" @click.stop="handleEdit(scope.row)" link type="primary">
                         编辑
                     </el-button>
-                    <el-popconfirm title="确认删除吗?" @confirm="handleDelete(scope.$index, scope.row)">
+                    <el-popconfirm title="确认删除吗?" @confirm="handleDelete(scope.row)">
                         <template #reference>
                             <el-button :loading="loading" size="small" link type="primary">
                                 删除
@@ -66,7 +66,7 @@
         </el-table>
         <template #footer>
             <div class="flex justify-center">
-                <el-pagination layout="prev, pager, next" :total="total" @current-change="handleChange" />
+                <el-pagination :current-page="page" layout="prev, pager, next" :total="total" @current-change="handleChange" />
             </div>
         </template>
     </el-card>
@@ -82,7 +82,7 @@
         <template #footer>
             <div class="flex justify-center">
                 <el-button @click="visible = false">取消</el-button>
-                <el-button type="primary" @click="handleConfirm(formRef)" :loading="loading">
+                <el-button type="primary" @click="handleConfirm" :loading="loading">
                     确认
                 </el-button>
             </div>
@@ -91,114 +91,47 @@
 </template>
 
 <script setup lang="ts">
-import { getNoticeList, addNoticeList, setNoticeList, deleteNoticeList } from '@/api/modules/notice'
 import Dialog from '@/components/common/Dialog.vue'
-import type { FormInstance } from 'element-plus'
+import {
+    addNoticeList,
+    deleteNoticeList,
+    getNoticeList,
+    setNoticeList,
+} from '@/api/modules/notice'
+import { useCrudTable } from '@/hooks/useCrudTable'
 
-interface DataListType {
-    id?: number
-    order?: number
-    title?: string
-    content?: string
-    update_time?: string
-}
-const total = ref(0)
-const visible = ref(false)
-const loading = ref(false)
-const dataList = ref<DataListType[] | []>([])
-const page = ref(1)
-const formRef = ref<FormInstance>()
-const editState = ref(false)
-const onEditId = ref(0)
-const title = computed(() => (editState.value ? '修改公告' : '新增公告'))
-
-const form = reactive({
-    title: '',
-    content: '',
-})
 const rules = {
-    title: [{ required: true, message: '必须输入标题', trigger: 'blur' },],
-    content: [{ required: true, message: '必须输入标题', trigger: 'blur' }]
+    title: [{ required: true, message: '必须输入标题', trigger: 'blur' }],
+    content: [{ required: true, message: '必须输入内容', trigger: 'blur' }],
 }
 
-async function getList(page: number) {
-    const res = await getNoticeList(page)
-    total.value = res.data.totalCount
-    dataList.value = res.data.list
-}
-getList(page.value)
-
-
-const addNotice = async () => {
-    visible.value = true
-    editState.value = false
-}
-
-const handleEdit = async (index: number, row: DataListType) => {
-    editState.value = true
-    visible.value = true
-    form.title = row.title as string
-    form.content = row.content as string
-    onEditId.value = row.id as number
-}
-
-const handleDelete = async (index: number, row: DataListType) => {
-    loading.value = true
-    try {
-        await deleteNoticeList(row.id as number)
-        ElMessage({ message: "删除成功", type: 'success' })
-        await getList(page.value)
-    }
-    catch (err: any) {
-        console.log(err);
-    }
-    finally {
-        loading.value = false
-    }
-}
-
-const handleClose = () => { formRef.value?.resetFields() }
-
-const handleChange = async (page: number) => {
-    loading.value = true
-    try {
-        await getList(page)
-    } finally {
-        loading.value = false
-    }
-}
-
-const handleConfirm = async (formRef: FormInstance | undefined) => {
-    if (!formRef) return
-    formRef.validate(async (valid) => {
-        if (valid) {
-            loading.value = true
-            try {
-                if (editState.value) {
-                    await setNoticeList(onEditId.value, form)
-                    await getList(page.value)
-                    visible.value = false
-                    ElMessage({ message: "修改成功", type: "success" })
-                } else {
-                    await addNoticeList(form)
-                    await getList(page.value)
-                    visible.value = false
-                    ElMessage({ message: "增加成功", type: "success" })
-                }
-            }
-            catch (err: any) {
-                const message = err.data.msg || '增加失败'
-                ElMessage({ message, type: 'warning' })
-            }
-            finally {
-                loading.value = false
-            }
-        }
-    })
-}
-
-
-
+const {
+    dataList,
+    loading,
+    total,
+    page,
+    visible,
+    formRef,
+    form,
+    title,
+    getList,
+    handleChange,
+    handleAdd,
+    handleEdit,
+    handleDelete,
+    handleClose,
+    handleConfirm,
+} = useCrudTable({
+    api: {
+        list: getNoticeList,
+        add: addNoticeList,
+        update: setNoticeList,
+        remove: deleteNoticeList,
+    },
+    defaults: () => ({ title: '', content: '' }),
+    titles: ['修改公告', '新增公告'],
+    toForm: (row) => ({ title: row.title, content: row.content }),
+})
 </script>
 
 <style scoped>

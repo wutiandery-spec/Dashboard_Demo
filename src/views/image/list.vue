@@ -2,7 +2,7 @@
   <el-container class="h-full">
     <!-- 头部区域 -->
     <el-header class="border-b border-b-gray-200 flex gap-3">
-      <el-button type="primary" :icon="Plus" size="default" @click="handleAddClass">
+      <el-button type="primary" :icon="Plus" size="default" @click="openClassCreator">
         添加分类
       </el-button>
       <el-upload action="#" :http-request="customUpload" list-type="text" :multiple="true" :show-file-list="false">
@@ -17,7 +17,7 @@
       <el-aside width="260px" class="border-r border-r-gray-200 flex flex-col items-center">
         <div class="w-full flex-1 overflow-auto px-2 py-2">
           <div v-for="item in dataList" :key="item.id" class="mb-2 rounded-lg hover:bg-blue-100 p-2"
-            :class="{ active: activeid === item.id }" @click="showClassImage(item.id)">
+            :class="{ active: activeid === item.id }" @click="selectClass(item.id)">
             <div class="flex items-center justify-between gap-2">
               <div class="min-w-0 flex-1">
                 <div class="truncate font-medium">{{ item.name }}</div>
@@ -25,7 +25,7 @@
               </div>
 
               <div class="flex items-center">
-                <el-button text size="default" type="primary" :icon="Edit" circle @click.stop="handleSetClass(item)" />
+                <el-button text size="default" type="primary" :icon="Edit" circle @click.stop="openClassEditor(item)" />
                 <el-button text size="default" type="danger" :icon="Delete" circle class='ml-0!'
                   :loading="deleteLoadingId === item.id" @click.stop="handleDelete(item)" />
               </div>
@@ -36,7 +36,7 @@
         </div>
 
         <el-pagination class="pb-3" background layout="prev, next" :total="total" :current-page="currentPage"
-          :page-size="pageSize" @current-change="handleCurrentChange" />
+          :page-size="classPageSize" @current-change="handleCurrentChange" />
       </el-aside>
       <!-- 内容展示区域 -->
       <el-main>
@@ -53,7 +53,7 @@
               </div>
 
               <div class="flex justify-around py-2 border-t border-gray-300 overflow-hidden">
-                <el-button size="default" type="primary" text @click="handleSetClass(item)">
+                <el-button size="default" type="primary" text @click="openImageRename(item)">
                   重命名
                 </el-button>
                 <el-button size="default" type="primary" text @click.stop="handleDelete(item)" :loading="deleteLoadingId === item.id">
@@ -65,7 +65,7 @@
         </el-row>
         <el-empty v-else description="当前分类下暂无图片" />
         <el-pagination class="fixed bottom-0 left-1/2" size="default" background
-          layout="prev, pager, next" :total="total2" :current-page="imgCurrentPage"
+          layout="prev, pager, next" :total="total2" :current-page="imgCurrentPage" :page-size="imagePageSize"
           @current-change="handleImgCurrentChange" />
       </el-main>
     </el-container>
@@ -86,7 +86,7 @@
         <el-button type="primary" :loading="submitting" @click="onSubmit">
           {{ submitButtonText }}
         </el-button>
-        <el-button :disabled="submitting" @click="handleClose">取消</el-button>
+        <el-button :disabled="submitting" @click="closeDrawers">取消</el-button>
       </el-form-item>
     </el-form>
   </AppDrawer>
@@ -100,7 +100,7 @@
         <el-button type="primary" :loading="submitting" @click="onSubmit">
           {{ submitButtonText }}
         </el-button>
-        <el-button :disabled="submitting" @click="handleClose">取消</el-button>
+        <el-button :disabled="submitting" @click="closeDrawers">取消</el-button>
       </el-form-item>
     </el-form>
   </AppDrawer>
@@ -108,31 +108,41 @@
 
 <script setup lang="ts">
 import { Delete, Edit, Plus } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
+import type { FormInstance, FormRules, UploadRequestOptions } from 'element-plus'
+import { UploadAjaxError } from 'element-plus/es/components/upload/src/ajax.mjs'
 import AppDrawer from '@/components/layout/AppDrawer.vue'
 import {
   addImageClass,
-  deleteImageClass,
-  getClassImage,
-  getImageList,
-  setImageClass,
-  uploadImage,
   deleteImage,
+  deleteImageClass,
+  setImageClass,
   setImageName,
+  uploadImage,
   type ImageAssetItem,
   type ImageClassItem,
 } from '@/api/modules/imageClass'
-import type { number } from 'echarts'
+import { useImageGallery } from '@/hooks/useImageGallery'
+import { confirmAction } from '@/utils/confirm'
+import { toast } from '@/utils/feedback'
 
-// 列表状态
-const dataList = ref<ImageClassItem[]>([])
-const classImageList = ref<ImageAssetItem[]>([])
-const srcList = ref<string[]>([])
-const total = ref(0)
-const total2 = ref(0)
-const currentPage = ref(1)
-const pageSize = ref(10)
-const activeid = ref<number | null>(null)
+/** 图库浏览：分类与图片分页、预览地址 */
+const {
+  classList: dataList,
+  classTotal: total,
+  classPage: currentPage,
+  classPageSize,
+  imageList: classImageList,
+  imageTotal: total2,
+  imagePage: imgCurrentPage,
+  imagePageSize,
+  activeId: activeid,
+  srcList,
+  loadClasses,
+  selectClass,
+  reload,
+  handleClassPageChange: handleCurrentChange,
+  handleImagePageChange: handleImgCurrentChange,
+} = useImageGallery({ imagePageSize: 12 })
 
 // 表单状态
 const formRef = ref<FormInstance>()
@@ -143,178 +153,101 @@ const editingId = ref<number | null>(null)
 const submitting = ref(false)
 const deleteLoadingId = ref<number | null>(null)
 const form = reactive({ name: '', order: 100 })
-const imgCurrentPage = ref(1)
 const drawerTitle = computed(() => (isEditMode.value ? '修改图库分类' : '新增图库分类'))
 const submitButtonText = computed(() => (isEditMode.value ? '确认修改' : '确认新增'))
 
 const rules: FormRules = {
-  name: [{ required: true, message: '请输入分类名称', trigger: 'blur' }],
+  name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
   order: [{ required: true, message: '请输入排序值', trigger: 'change' }],
 }
 
-// 加载分类列表
-async function loadList() {
-  try {
-    const response = await getImageList(pageSize.value, currentPage.value)
-    const list = Array.isArray(response.data?.list) ? response.data.list : []
-    dataList.value = list
-    total.value = Number(response.data?.totalCount ?? list.length)
-    const nextActiveId =
-      activeid.value && list.some((item) => item.id === activeid.value) ? activeid.value : (list[0]?.id ?? null)
-    if (nextActiveId) {
-      await showClassImage(nextActiveId)
-    } else {
-      activeid.value = null
-      classImageList.value = []
-      srcList.value = []
-    }
-  } catch (err) {
-    console.log(err);
-  }
-}
-
-// 加载指定分类下的图片并同步预览地址
-async function showClassImage(id: number) {
-  try {
-    activeid.value = id
-    const response = await getClassImage(id, 12, imgCurrentPage.value)
-    const list = Array.isArray(response.data?.list) ? response.data.list : []
-    classImageList.value = list
-    total2.value = response.data.totalCount as number
-    srcList.value = list.map((item) => item.url).filter(Boolean)
-  } catch (err) {
-    console.log(err);
-  }
-}
-
-// 分页切换
-function handleCurrentChange(page: number) {
-  currentPage.value = page
-  void loadList()
-}
-
-// 打开新增分类抽屉
-function handleAddClass() {
+/** 打开新增分类抽屉 */
+const openClassCreator = () => {
   isEditMode.value = false
+  editingId.value = null
   form.name = ''
   form.order = 100
   open.value = true
 }
 
-// 打开编辑抽屉并回显数据
-function handleSetClass(item: ImageClassItem) {
+/** 打开分类编辑抽屉 */
+const openClassEditor = (item: ImageClassItem) => {
   isEditMode.value = true
   editingId.value = item.id
   form.name = item.name
-  form.order = item.order as number
-  if (item.order) {
-    open.value = true
-  } else {
-    open2.value = true
-  }
+  form.order = Number(item.order ?? 0)
+  open.value = true
 }
 
-// 删除分类（二次确认后直接调接口并刷新）
-async function handleDelete(item: ImageClassItem) {
-  try {
-    await ElMessageBox.confirm(`确认删除分类“${item.name}”吗？删除后不可恢复。`, '删除确认', {
-      type: 'warning',
-      confirmButtonText: '确认删除',
-      cancelButtonText: '取消',
-    })
-
-    deleteLoadingId.value = item.id
-    try {
-      if (item.order) {
-        await deleteImageClass(item.id)
-        ElMessage.success('删除分类成功')
-      } else {
-        await deleteImage([item.id])
-        ElMessage.success('删除图片成功')
-      }
-      if (dataList.value.length === 1 && currentPage.value > 1) {
-        currentPage.value -= 1
-      }
-      activeid.value = activeid.value === item.id ? null : activeid.value
-      await loadList()
-    } catch (err) {
-      console.log(err);
-    } finally {
-      deleteLoadingId.value = null
-    }
-  } catch (err) {
-    console.log(err);
-  }
+/** 打开图片重命名抽屉 */
+const openImageRename = (item: ImageAssetItem) => {
+  isEditMode.value = true
+  editingId.value = item.id
+  form.name = item.name
+  open2.value = true
 }
 
-// 提交表单：新增或修改
-async function onSubmit() {
+/** 关闭抽屉 */
+const closeDrawers = () => {
+  open.value = false
+  open2.value = false
+}
+
+const resetFormState = () => {
+  isEditMode.value = false
+  editingId.value = null
+  form.name = ''
+  form.order = 100
+}
+
+/** 提交分类新增 / 修改或图片重命名 */
+const onSubmit = async () => {
   submitting.value = true
   try {
-    if (isEditMode.value) {
-      if (open.value) {
-        await setImageClass(form.name, Number(form.order), editingId.value!)
-        ElMessage.success('修改分类成功')
-      } else {
-        await setImageName(editingId.value as number, form.name)
-        ElMessage.success('修改名称成功')
-      }
+    if (open2.value) {
+      await setImageName(editingId.value as number, form.name)
+      toast.success('修改名称成功')
+      closeDrawers()
+      await reload()
+    } else if (isEditMode.value) {
+      await setImageClass(form.name, Number(form.order), editingId.value as number)
+      toast.success('修改分类成功')
+      closeDrawers()
+      await reload()
     } else {
       await addImageClass(form.name, Number(form.order))
-      ElMessage.success('新增分类成功')
-      currentPage.value = 1
+      toast.success('新增分类成功')
+      closeDrawers()
+      await loadClasses(1)
     }
-    open.value = false
-    open2.value = false
-    await loadList()
-  } catch (err) {
-    console.log(err);
   } finally {
     submitting.value = false
   }
 }
 
-function handleClose() {
-  open.value = false
-  open2.value = false
-}
-function resetFormState() {
-  isEditMode.value = false
-  editingId.value = null
-  form.name = ''
-  form.order = 0
-}
-
-interface itemType {
-  id: number;
-  url: string;
-  name: string;
-  path: string;
-  create_time: string;
-  update_time: string;
-  image_class_id: number;
-}
-async function handleImgCurrentChange(page: number) {
-  imgCurrentPage.value = page
-  const response = await getClassImage(activeid.value as number, 9, imgCurrentPage.value)
-  const list = Array.isArray(response.data?.list) ? response.data.list : []
-  classImageList.value = list
-  total2.value = response.data.totalCount as number
-  srcList.value = list.map((item) => item.url).filter(Boolean)
-}
-function handleRename(item: itemType) {
-  open2.value = true
-}
-async function handleDeleteImage(item: itemType) {
+/** 删除分类或图片（分类含 order 字段，图片没有） */
+const handleDelete = async (item: ImageClassItem | ImageAssetItem) => {
+  const isClass = 'order' in item
+  const ok = await confirmAction(
+    `确认删除${isClass ? '分类' : '图片'}“${item.name}”吗？删除后不可恢复。`,
+    { title: '删除确认', confirmText: '确认删除' },
+  )
+  if (!ok) return
+  deleteLoadingId.value = item.id
   try {
-  } catch (err) {
-
+    if (isClass) {
+      await deleteImageClass(item.id)
+      toast.success('删除分类成功')
+    } else {
+      await deleteImage([item.id])
+      toast.success('删除图片成功')
+    }
+    await reload()
   } finally {
-
+    deleteLoadingId.value = null
   }
 }
-import type { UploadRequestOptions } from 'element-plus'
-import { UploadAjaxError } from 'element-plus/es/components/upload/src/ajax.mjs'
+
 const customUpload = async (options: UploadRequestOptions) => {
   try {
     const res = await uploadImage({
@@ -322,17 +255,16 @@ const customUpload = async (options: UploadRequestOptions) => {
       fileList: [options.file],
     })
     options.onSuccess(res.data)
-    ElMessage.success('上传成功')
-    void showClassImage(activeid.value as number)
+    toast.success('上传成功')
+    await reload()
   } catch (err) {
     options.onError(err as UploadAjaxError)
-    ElMessage.error('上传失败')
+    toast.error('上传失败')
   }
 }
 
-
 onMounted(() => {
-  void loadList()
+  loadClasses()
 })
 </script>
 

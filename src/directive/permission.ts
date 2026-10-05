@@ -1,25 +1,13 @@
-import type { Directive } from "vue"
+import type { Directive } from 'vue'
 import { useUserStore } from '@/stores/user'
-export const PERMISSION_FIELDS = ['permission', 'auth', 'ruleName', 'rule_name', 'code'] as const
+import { hasAnyPermission } from '@/utils/permission'
 
-function hasPermission(permission: string[] | string ,el: HTMLElement) {
-  const permissionList = ref<string[]>([])
-  const userStore = useUserStore()
-  permissionList.value = userStore.userInfo?.ruleNames as string[]
-  if (!Array.isArray(permission)) {
-    throw new Error ('未配置权限')
-  }
-  const hasAuth =  permission.some(item => permissionList.value.includes(item))
-  if(el && !hasAuth){
-    el.parentNode?.removeChild(el)
-  }
-  return hasAuth
-}
-
-export const permission: Directive = {
-  mounted(el: HTMLElement, binding: DirectiveBinding<string | string[]>) {
-    const { value } = binding
-    hasPermission(value,el)
+/** v-permission：无权限时移除元素 */
+export const permission: Directive<HTMLElement, string | string[]> = {
+  mounted(el, binding) {
+    const value = Array.isArray(binding.value) ? binding.value : [binding.value]
+    if (!hasAnyPermission(useUserStore().userInfo, value)) {
+      el.parentNode?.removeChild(el)
+    }
   },
 }
-

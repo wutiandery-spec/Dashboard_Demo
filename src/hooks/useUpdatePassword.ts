@@ -1,6 +1,8 @@
 import type { FormInstance, FormRules } from 'element-plus'
 import { updatePassword } from '@/api/modules/user'
 import { throttle } from '@/utils/interaction'
+import { toast } from '@/utils/feedback'
+import { confirmAction } from '@/utils/confirm'
 
 export function useUpdatePassword() {
   const drawerVisible = ref(false)
@@ -28,39 +30,25 @@ export function useUpdatePassword() {
   const submitForm = throttle(async (formEl: FormInstance | undefined) => {
     if (!formEl || submitting.value) return
     if (ruleForm.newPassword !== ruleForm.confirmPassword) {
-      ElMessage.error('两次输入的密码不一致')
-      return
+      return toast.error('两次输入的密码不一致')
     }
-    formEl.validate(async (valid) => {
-      if (!valid) {
-        console.log('error submit!')
-        return
-      }
-      submitting.value = true
-      try {
-        await updatePassword(ruleForm.oldPassword, ruleForm.newPassword, ruleForm.confirmPassword)
-        ruleFormRef.value?.resetFields()
-        drawerVisible.value = false
-        ElMessage.success('密码修改成功，请重新登录')
-      } catch (error) {
-        // 接口失败时拦截器已弹出错误提示，这里仅记录日志避免复用拦截器弹窗
-        console.error('修改密码失败:', error)
-      } finally {
-        submitting.value = false
-      }
-    })
+    if (!(await formEl.validate().catch(() => false))) return
+    submitting.value = true
+    try {
+      await updatePassword(ruleForm.oldPassword, ruleForm.newPassword, ruleForm.confirmPassword)
+      ruleFormRef.value?.resetFields()
+      drawerVisible.value = false
+      toast.success('密码修改成功，请重新登录')
+    } finally {
+      submitting.value = false
+    }
   }, 500)
 
-  function onClose() {
-    ElMessageBox.confirm('Do you want to cancel?')
-      .then(() => {
-        ruleFormRef.value?.resetFields()
-        drawerVisible.value = false
-        ElMessage.info('已取消')
-
-      })
-      .catch(() => {
-      })
+  async function onClose() {
+    if (!(await confirmAction('Do you want to cancel?', { title: '' }))) return
+    ruleFormRef.value?.resetFields()
+    drawerVisible.value = false
+    toast.info('已取消')
   }
 
   function onClosed() {

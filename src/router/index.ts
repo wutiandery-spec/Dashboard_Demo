@@ -1,9 +1,9 @@
 // src/router/index.ts — 路由入口
-import { createRouter, createWebHistory,createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { hasPermission } from '@/utils/permission'
 import { buildMenuRoutes } from './menu'
 import { fixedRoutes } from './routes'
-import type { UserInfo } from '@/type'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -46,28 +46,6 @@ async function ensureMenuRoutes(): Promise<void> {
       dynamicRouteNames.add(routeName)
     })
   menuRoutesReady = true
-}
-
-// -------------------------------------------------
-// 权限工具
-// -------------------------------------------------
-
-/** 从用户信息中收集所有权限标识（兼容多种字段名） */
-function collectPermissionSet(userInfo: UserInfo | null): Set<string> {
-  const permissions = [
-    ...(Array.isArray(userInfo?.permissions) ? userInfo.permissions : []),
-    ...(Array.isArray(userInfo?.authList) ? userInfo.authList : []),
-    ...(Array.isArray(userInfo?.ruleNames) ? userInfo.ruleNames : []),
-  ]
-  return new Set(permissions.map((item) => String(item).trim()).filter(Boolean))
-}
-
-/** 校验当前路由权限 */
-function hasRoutePermission(userInfo: UserInfo | null, permission: string): boolean {
-  const normalizedPermission = String(permission || '').trim()
-  if (!normalizedPermission) return true
-  const permissionSet = collectPermissionSet(userInfo)
-  return permissionSet.size === 0 || permissionSet.has(normalizedPermission)
 }
 
 // -------------------------------------------------
@@ -116,7 +94,7 @@ router.beforeEach(async (to) => {
   // 5. 权限校验
   const currentPermission = to.meta?.permission as string | undefined
   if (needsAuth && currentPermission) {
-    if (!hasRoutePermission(userStore.userInfo, currentPermission)) {
+    if (!hasPermission(userStore.userInfo, currentPermission)) {
       ElMessage.error('暂无访问权限')
       return '/admin/index'
     }

@@ -1,6 +1,6 @@
 // 根据后端返回的菜单数据，自动解析生成 /admin 下的子路由
 import type { RouteRecordRaw } from 'vue-router'
-import { PERMISSION_FIELDS } from '@/directive/permission'
+import { pickMenuPermission } from '@/utils/permission'
 import type { MenuItem } from '@/type'
 
 export type { MenuItem }
@@ -57,10 +57,7 @@ export function getMenuTitle(menu: MenuItem): string {
 }
 
 export function getMenuPermission(menu: MenuItem): string {
-  const permissionCandidate = (PERMISSION_FIELDS as readonly string[])
-    .map((field: string) => (menu as Record<string, unknown>)[field])
-    .find((item) => item !== undefined && item !== null && String(item).trim() !== '')
-  return permissionCandidate ? String(permissionCandidate) : ''
+  return pickMenuPermission(menu)
 }
 
 function stripAdminPrefix(path: string): string {

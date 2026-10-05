@@ -10,9 +10,6 @@ import {permission} from '@/directive/permission'
 
 const app = createApp(App)
 
-// Element Plus 组件/API 已通过 unplugin-vue-components + ElementPlusResolver 按需自动引入，
-// 无需 app.use(ElementPlus) 与全量 CSS。
-// 图标因侧边栏/仪表盘通过 <component :is="icon名"> 动态引用，需全局注册。
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
