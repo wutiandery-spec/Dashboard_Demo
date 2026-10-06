@@ -68,6 +68,7 @@
 <script setup lang="ts">
 import { openModal } from '@/utils/modal'
 import { useUserStore } from '@/stores/user'
+import { logout } from '@/api/modules/user'
 import router, { removeDynamicRoutes } from '@/router'
 import { useAppStore } from '@/stores/app'
 import { useUpdatePassword } from '@/hooks/useUpdatePassword'
@@ -85,9 +86,13 @@ const userStore = useUserStore()
 const username = computed(() => userStore.userInfo?.username || '')
 const handleLogout = () => {
   openModal('是否要退出登录?', async () => {
-    userStore.logout()
-    removeDynamicRoutes()
-    await router.push('/login')
+    try {
+      await logout()
+    } finally {
+      userStore.logout()
+      removeDynamicRoutes()
+      await router.push('/login')
+    }
   })
 }
 

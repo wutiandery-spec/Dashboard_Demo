@@ -13,7 +13,6 @@ dist
 dist-ssr
 coverage
 *.local
-备份
 .vscode
 
 # Editor directories and files

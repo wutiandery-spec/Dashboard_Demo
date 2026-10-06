@@ -9,3 +9,7 @@ export function getInfo() {
 export function updatePassword(oldpassword: string, password: string, repassword: string) {
   return axios.post('/updatepassword', { oldpassword, password, repassword })
 }
+
+export function logout() {
+  return axios.post('/logout')
+}

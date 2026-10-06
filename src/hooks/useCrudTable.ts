@@ -22,6 +22,8 @@ export interface CrudTableOptions {
   successText?: [string, string]
   /** 附加查询参数（搜索条件等） */
   params?: () => Record<string, any>
+  /** 自定义响应解包（默认 pickList，用于裸数组/树形等非标准分页结构） */
+  transform?: (res: any) => { list: any[]; total: number }
   /** 列表数据的附加处理（如保存接口返回的字典数据） */
   onData?: (data: any) => void
   /** 行数据预处理（如补充 statusLoading） */
@@ -61,7 +63,7 @@ export function useCrudTable(options: CrudTableOptions) {
     loading.value = true
     try {
       const res = await api.list(page.value, { limit: pageSize, ...options.params?.() })
-      const { list, total: count } = pickList(res)
+      const { list, total: count } = options.transform ? options.transform(res) : pickList(res)
       dataList.value = options.mapRow ? list.map(options.mapRow) : list
       total.value = count
       options.onData?.(res.data)
