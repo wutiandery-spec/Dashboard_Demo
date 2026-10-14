@@ -45,7 +45,7 @@
             <el-card shadow="hover" class="mb-2" :bodyStyle="{ padding: 0 }">
               <div class="relative">
                 <el-image class="w-full h-40" :initial-index="index" :src="item.url" fit="scale-down"
-                  :preview-src-list="srcList" infinite />
+                  :preview-src-list="srcList" infinite lazy />
                 <div class="absolute bottom-0 left-0 right-0 
                  bg-linear-to-t from-gray-600/60 to-transparent overflow-hidden">
                   <span class="text-white text-sm font-medium">{{ item.name }}</span>

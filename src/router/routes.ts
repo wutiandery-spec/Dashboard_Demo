@@ -6,6 +6,7 @@ const LoginView = () => import('@/views/login.vue')
 const HomeView = () => import('@/views/index.vue')
 const NotFoundView = () => import('@/views/404.vue')
 
+// 固定路由配置
 export const fixedRoutes: RouteRecordRaw[] = [
   { path: '/', redirect: '/admin' },
   {

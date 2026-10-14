@@ -21,6 +21,8 @@ export function hasPermission(userInfo: UserInfo | null, permission?: string): b
 /** 判断是否命中任意权限（v-permission 指令使用） */
 export function hasAnyPermission(userInfo: UserInfo | null, permissions: string[]): boolean {
   const owned = collectPermissionSet(userInfo)
+  // 与路由守卫保持一致：未配置任何权限数据时不限制按钮，避免接口未返回权限时整页按钮消失
+  if (owned.size === 0) return true
   return permissions.some((item) => owned.has(String(item).trim()))
 }
 

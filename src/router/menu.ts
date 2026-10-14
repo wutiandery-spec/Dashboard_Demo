@@ -11,7 +11,7 @@ const fallbackView = () => import('@/views/404.vue')
 const explicitViewMap: Record<string, string> = {
   '/index': '../views/index.vue',
 }
-
+/* 规范化菜单路径 */
 export function normalizeMenuPath(frontpath?: string): string {
   if (!frontpath) return ''
   const trimmedPath = String(frontpath).trim()
@@ -19,7 +19,7 @@ export function normalizeMenuPath(frontpath?: string): string {
   const withLeadingSlash = trimmedPath.startsWith('/') ? trimmedPath : `/${trimmedPath}`
   return withLeadingSlash.replace(/\/{2,}/g, '/')
 }
-
+/* 转换为 /admin 下的路由路径 */
 export function toAdminRoutePath(frontpath?: string): string {
   const normalizedPath = normalizeMenuPath(frontpath)
   if (!normalizedPath) return ''
@@ -28,18 +28,18 @@ export function toAdminRoutePath(frontpath?: string): string {
   }
   return `/admin${normalizedPath}`
 }
-
+/* 转换为 /admin 下的子路由路径 */
 export function toAdminChildPath(frontpath?: string): string {
   const adminPath = toAdminRoutePath(frontpath)
   return adminPath.replace(/^\/admin\/?/, '')
 }
-
+/* 确保数据为数组 */
 function ensureArray(data: unknown): unknown[] {
   if (Array.isArray(data)) return data
   if (data && typeof data === 'object') return [data]
   return []
 }
-
+/* 构建菜单树 */
 export function getMenuTree(rawMenus: unknown): MenuItem[] {
   const menus = ensureArray(rawMenus)
   return (menus as MenuItem[]).map((menu) => ({
@@ -47,23 +47,23 @@ export function getMenuTree(rawMenus: unknown): MenuItem[] {
     child: getMenuTree(menu.child),
   }))
 }
-
+/* 判断是否为叶子菜单 */
 function isLeafMenu(menu: MenuItem): boolean {
   return !menu.child || !Array.isArray(menu.child) || menu.child.length === 0
 }
-
+/* 获取菜单标题 */  
 export function getMenuTitle(menu: MenuItem): string {
   return menu.title || menu.name || ''
 }
-
+/* 获取菜单权限 */
 export function getMenuPermission(menu: MenuItem): string {
   return pickMenuPermission(menu)
 }
-
+/* 移除 /admin 前缀 */
 function stripAdminPrefix(path: string): string {
   return path.replace(/^\/admin(?:\/|$)/, '/')
 }
-
+/* 构建视图候选路径 */
 function buildViewCandidates(frontpath?: string): string[] {
   const normalizedPath = normalizeMenuPath(frontpath)
   if (!normalizedPath) return []
@@ -86,7 +86,7 @@ function buildViewCandidates(frontpath?: string): string[] {
     ),
   )
 }
-
+/* 解析菜单组件 */
 export function resolveMenuComponent(menu: MenuItem): () => Promise<{ default: unknown }> {
   try {
     const candidates = buildViewCandidates(menu.frontpath)
@@ -102,7 +102,7 @@ export function resolveMenuComponent(menu: MenuItem): () => Promise<{ default: u
   }
   return fallbackView
 }
-
+/* 展平叶子菜单 */
 function flattenLeafMenus(menus: MenuItem[]): MenuItem[] {
   const leafMenus: MenuItem[] = []
   for (const menu of menus) {
@@ -114,14 +114,14 @@ function flattenLeafMenus(menus: MenuItem[]): MenuItem[] {
   }
   return leafMenus
 }
-
+/* 获取菜单索引路径 */
 export function getMenuIndex(menu: MenuItem): string {
   const adminPath = toAdminRoutePath(menu.frontpath)
   if (adminPath === '/admin/') {
     return adminPath + 'index'
   } else return adminPath || `/${menu.id || ''}`
 }
-
+/* 构建菜单路由 */
 export function buildMenuRoutes(rawMenus: unknown): RouteRecordRaw[] {
   if (!rawMenus) {
     console.warn('[menu] 菜单数据为空，跳过动态路由生成')
@@ -158,7 +158,7 @@ export function buildMenuRoutes(rawMenus: unknown): RouteRecordRaw[] {
 
   return [...uniqueRoutes.values()]
 }
-
+/* 查找菜单打开路径 */
 export function findMenuOpenKeys(menus: MenuItem[], activePath: string): string[] {
   if (!Array.isArray(menus)) return []
 

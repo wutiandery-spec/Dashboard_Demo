@@ -36,5 +36,11 @@ coverage
 # Vitest
 __screenshots__/
 
+# 演示数据录制账号（本地专用，禁止提交）
+.env.record
+
+# 构建体积报告（用于优化前后对比）
+.size-reports/
+
 # Vite
 *.timestamp-*-*.mjs

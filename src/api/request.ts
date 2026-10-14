@@ -1,5 +1,5 @@
 //axios 实例封装(拦截器/基础路径)
-import axios from 'axios'
+import axios, { type InternalAxiosRequestConfig } from 'axios'
 import { useUserStore } from '@/stores/user'
 import router from '@/router'
 
@@ -7,6 +7,19 @@ const service = axios.create({
   baseURL: '/api',
   timeout: 10000,
 })
+
+/**
+ * 演示模式：静态托管环境没有可用后端，请求改为回放录制好的接口数据。
+ * 回放模块按需动态加载——生产构建不会把演示数据打进包里。
+ * 这里直接读 import.meta.env（而不是引入 flag.ts 的常量），
+ * 便于构建期把整段分支连同演示数据一起摇掉。
+ */
+if (import.meta.env.VITE_DEMO === '1') {
+  service.defaults.adapter = async (config) => {
+    const { demoAdapter } = await import('@/api/demo')
+    return demoAdapter(config as InternalAxiosRequestConfig)
+  }
+}
 //请求拦截器
 service.interceptors.request.use(
   (config) => {

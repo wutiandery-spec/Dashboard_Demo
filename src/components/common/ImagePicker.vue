@@ -25,7 +25,7 @@
                   <el-checkbox :model-value="true" size="large" @click.stop="onToggle(item)" />
                 </div>
                 <div class="relative">
-                  <el-image class="w-full h-40" :initial-index="index" :src="item.url" fit="scale-down" infinite />
+                  <el-image class="w-full h-40" :initial-index="index" :src="item.url" fit="scale-down" infinite lazy />
                   <div
                     class="absolute bottom-0 left-0 right-0 bg-linear-to-t from-gray-600/60 to-transparent overflow-hidden">
                     <span class="text-white text-sm font-medium">{{ item.name }}</span>

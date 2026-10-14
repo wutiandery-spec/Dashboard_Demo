@@ -40,7 +40,7 @@
       <el-table-column label="商品" min-width="260">
         <template #default="{ row }">
           <div class="flex items-center">
-            <el-image class="w-12 h-12 rounded" :src="row.order_items?.[0]?.goods_item?.cover" fit="cover" />
+            <el-image class="w-12 h-12 rounded" :src="row.order_items?.[0]?.goods_item?.cover" fit="cover" lazy />
             <div class="ml-2">
               <div>{{ row.order_items?.[0]?.goods_item?.title }}</div>
               <small class="text-gray-400">共 {{ row.order_items?.length ?? 0 }} 件商品</small>

@@ -1,5 +1,6 @@
 基于 Vue 3 + TypeScript + Pinia + Vite + Element Plus + Tailwind CSS v4 的中后台管理项目。
 <img width="1301" height="1245" alt="image-20260915150145551" src="https://github.com/user-attachments/assets/a2b4c698-2bd6-4f66-89a4-774f9d6a1681" />
+
 ## 技术栈
 
 

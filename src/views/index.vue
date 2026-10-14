@@ -86,11 +86,14 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { defineAsyncComponent } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { getStatistics1, getStatistics2 } from '@/api/modules/statistics'
 import NumberTransition from '@/components/common/NumberTransition.vue'
-import ECharts from '@/components/common/ECharts.vue'
 import TipsCard from '@/components/common/TipsCard.vue'
+
+// 图表组件按需加载：echarts 及其渲染器单独成块，列表页不再为其付出首屏体积
+const ECharts = defineAsyncComponent(() => import('@/components/common/ECharts.vue'))
 
 const router = useRouter()
 const userStore = useUserStore()

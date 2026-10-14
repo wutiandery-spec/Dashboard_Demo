@@ -54,7 +54,7 @@
       <el-table-column label="商品" min-width="240">
         <template #default="{ row }">
           <div class="flex items-center">
-            <el-image class="w-10 h-10 rounded" :src="row.cover" fit="cover" />
+            <el-image class="w-10 h-10 rounded" :src="row.cover" fit="cover" lazy />
             <span class="ml-2">{{ row.name }}</span>
           </div>
         </template>

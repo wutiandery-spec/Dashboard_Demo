@@ -52,6 +52,23 @@ export default defineConfig({
     }),
   ],
   base: '/Dashboard_Demo/',
+  build: {
+    rollupOptions: {
+      output: {
+        /**
+         * 手动分包：把 echarts / zrender 固定成独立块。
+         * 这两个包只被「按需加载」的图表组件引用，单独成块后既能长期命中缓存，
+         * 也不会被并进首屏或列表页的公共块。
+         * 注意：不要把 element-plus 合并成单块——那会把原本懒加载的组件提成首屏依赖。
+         */
+        manualChunks: (id: string) => {
+          const path = id.replace(/\\/g, '/')
+          if (path.includes('/echarts/') || path.includes('/zrender/')) return 'echarts'
+          return
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': {

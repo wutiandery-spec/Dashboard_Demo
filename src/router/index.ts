@@ -10,9 +10,7 @@ const router = createRouter({
   routes: fixedRoutes,
 })
 
-// -------------------------------------------------
 // 动态路由状态
-// -------------------------------------------------
 let menuRoutesReady = false
 const dynamicRouteNames = new Set<string>()
 
@@ -48,9 +46,7 @@ async function ensureMenuRoutes(): Promise<void> {
   menuRoutesReady = true
 }
 
-// -------------------------------------------------
 // 路由守卫
-// -------------------------------------------------
 router.beforeEach(async (to) => {
   const userStore = useUserStore()
   const token = userStore.token
@@ -83,8 +79,6 @@ router.beforeEach(async (to) => {
   }
 
   // 4. 已获取用户信息但动态路由未构建 → 构建动态路由，并强制重新导航
-  //    刷新页面时，/admin/xxx 这类 URL 会被兜底路由 /:pathMatch(.*)* 匹配，
-  //    to.matched 中不含 /admin 父路由，needsAuth 为 false，不能依赖 needsAuth 判断
   if (token && !menuRoutesReady) {
     await ensureMenuRoutes()
     // 添加临时查询参数 _r 使重定向 URL 与当前不同，Vue Router 才会处理重定向

@@ -31,7 +31,7 @@
                     <el-button size="default" link type="primary" @click.stop="handleAdd">增加权限</el-button>
                     <el-popconfirm title="确认删除吗?" @confirm="handleDelete(data)">
                         <template #reference>
-                            <el-button :loading="data.statusLoading" size="default" link type="primary" @click.stop>
+                            <el-button size="default" link type="primary" @click.stop>
                                 删除
                             </el-button>
                         </template>

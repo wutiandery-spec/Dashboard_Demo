@@ -7,3 +7,8 @@ declare module '~icons/*' {
   const component: Component
   export default component
 }
+
+/** 构建环境变量：VITE_DEMO=1 时启用演示模式（本地数据回放） */
+interface ImportMetaEnv {
+  readonly VITE_DEMO?: string
+}
