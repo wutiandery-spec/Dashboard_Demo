@@ -85,9 +85,6 @@
           </el-form-item>
         </el-form>
         <div class="mt-6 text-sm text-slate-500">测试账号：admin / admin</div>
-        <div v-if="isDemoMode" class="mt-2 text-xs text-sky-600">
-          演示模式：页面数据来自本地回放，任意账号密码均可登录
-        </div>
       </div>
     </el-col>
   </el-row>
@@ -100,7 +97,6 @@ import { useUserStore } from '@/stores/user'
 import router from '@/router'
 import { ensureMenuRoutes } from '@/router'
 import type { LoginResult } from '@/type'
-import { isDemoMode } from '@/api/demo/flag'
 const userStore = useUserStore()
 
 const userForm = ref({
